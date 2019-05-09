@@ -34,7 +34,7 @@ class RegionListController: UIViewController {
         mapView.zoomToUserLocation()
     }
     @IBAction private func filterRegionsList(_ sender: UISegmentedControl) {
-        //loadAllRegions()
+        loadAllRegions()
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -49,15 +49,15 @@ class RegionListController: UIViewController {
     private func loadAllRegions() {
         regionData.removeAll()
         let allRegions = RegionData.allRegionsList()
+        let filteredByEntry = allRegions.filter{ $0.event == .onEntry }
+        let filteredByExit = allRegions.filter{ $0.event == .onExit }
         allRegions.forEach{ add(region: $0)}
         
-        //        if filterRegionList.selectedSegmentIndex == 1 {
-        //
-        //        } else if filterRegionList.selectedSegmentIndex == 2 {
-        //
-        //        } else {
-        //
-        //        }
+        if filterRegionList.selectedSegmentIndex == 1 {
+            filteredByExit.forEach{ remove(region: $0) }
+        } else if filterRegionList.selectedSegmentIndex == 2 {
+            filteredByEntry.forEach{ remove(region: $0) }
+        }
     }
     
     private func saveAllRegions() {
