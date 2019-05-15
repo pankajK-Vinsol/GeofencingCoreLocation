@@ -24,12 +24,12 @@ class AddRegionsController: UIViewController {
     @IBOutlet weak private var exitRadioImage: UIImageView!
     
     weak var delegate: AddRegionsControllerDelegate?
-    private var addEntryRegion = Bool()
+    private var addEntryRegion = true
     
     override func viewDidLoad() {
         super.viewDidLoad()
         saveButton.isEnabled = false
-        mapView.zoomToUserLocation(latitudeMeters: 3000, longitudeMeters: 3000)
+        mapView.zoomToUserLocation(latitudeMeters: 500, longitudeMeters: 500)
     }
     
     @IBAction private func close(_ sender: UIButton) {
@@ -62,6 +62,6 @@ class AddRegionsController: UIViewController {
     }
     
     @IBAction private func zoomClick(_ sender: UIButton) {
-        mapView.zoomToUserLocation(latitudeMeters: 1000, longitudeMeters: 1000)
+        mapView.zoomToUserLocation(latitudeMeters: 100, longitudeMeters: 100)
     }
 }

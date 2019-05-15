@@ -23,8 +23,20 @@ class RegionListController: UIViewController {
         loadAllRegions()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        guard mapView.annotations.count > 0 else {
+            return
+        }
+        updateViewWithRegions()
+    }
+    
+    func updateViewWithRegions() {
+        mapView.layoutMargins = UIEdgeInsets(top: 25, left: 25, bottom: 25, right: 25)
+        mapView.showAnnotations(mapView.annotations, animated: true)
+    }
+    
     @IBAction private func zoomCurrentLocation(_ sender: UIButton) {
-        mapView.zoomToUserLocation(latitudeMeters: 1000, longitudeMeters: 1000)
+        mapView.zoomToUserLocation(latitudeMeters: 100, longitudeMeters: 100)
     }
     @IBAction private func filterRegionsList(_ sender: UISegmentedControl) {
         filterRegions()
@@ -43,19 +55,45 @@ class RegionListController: UIViewController {
         regionData.removeAll()
         let allRegions = RegionData.allRegions()
         allRegions.forEach{ add(region: $0)}
-        self.mapView.zoomToUserLocation(latitudeMeters: 3000, longitudeMeters: 3000)
     }
     
     private func filterRegions() {
+        regionData.removeAll()
         let allRegions = RegionData.allRegions()
         let filteredByEntry = allRegions.filter{ $0.event == .onEntry }
         let filteredByExit = allRegions.filter{ $0.event == .onExit }
         
-        if filterRegionList.selectedSegmentIndex == 1 {
-            filteredByExit.forEach{ remove(region: $0) }
-        } else if filterRegionList.selectedSegmentIndex == 2 {
-            filteredByEntry.forEach{ remove(region: $0) }
+        let annotations = mapView.annotations
+        for annotation in annotations {
+            mapView.view(for: annotation)?.isHidden = false
         }
+        for region in allRegions {
+            addRadiusOverlay(region: region)
+        }
+        
+        switch filterRegionList.selectedSegmentIndex {
+        case 1:
+            filteredByExit.forEach{
+                hideAnnotations(region: $0)
+            }
+        case 2:
+            filteredByEntry.forEach{
+                hideAnnotations(region: $0)
+            }
+        default:
+            break
+        }
+        updateViewWithRegions()
+    }
+    
+    private func hideAnnotations(region: RegionData) {
+        let longitude = region.coordinate.longitude
+        let annotationsRemoved = mapView.annotations.filter { $0.coordinate.longitude == longitude}
+        for annotation in annotationsRemoved {
+            mapView.view(for: annotation)?.isHidden = true
+        }
+        let overlayRemoved = mapView.overlays.filter{ $0.coordinate.longitude == longitude}
+        mapView.removeOverlays(overlayRemoved)
     }
     
     func saveRegion() {
@@ -99,7 +137,7 @@ class RegionListController: UIViewController {
         guard let overlays = mapView?.overlays else { return }
         for overlay in overlays {
             guard let circleOverlay = overlay as? MKCircle else { continue }
-            if circleOverlay.radius == region.radius {
+            if circleOverlay.radius == region.radius && circleOverlay.coordinate.latitude == region.coordinate.latitude{
                 mapView?.removeOverlay(circleOverlay)
                 break
             }
@@ -155,6 +193,10 @@ extension RegionListController: AddRegionsControllerDelegate {
 
 // MARK: - MapView Delegate
 extension RegionListController: MKMapViewDelegate {
+    
+    func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
+        self.mapView.zoomToUserLocation(latitudeMeters: 100, longitudeMeters: 100)
+    }
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         let identifier = "myRegions"
