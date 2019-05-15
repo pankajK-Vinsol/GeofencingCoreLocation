@@ -10,10 +10,6 @@ import UIKit
 import MapKit
 import CoreLocation
 
-struct PreferenceKeys {
-    static let savedRegions = "savedRegions"
-}
-
 class RegionListController: UIViewController {
 
     @IBOutlet weak private var filterRegionList: UISegmentedControl!
@@ -24,17 +20,14 @@ class RegionListController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        locationManager.delegate = self
-        locationManager.requestAlwaysAuthorization()
         loadAllRegions()
     }
     
     @IBAction private func zoomCurrentLocation(_ sender: UIButton) {
-        mapView.zoomToUserLocation()
+        mapView.zoomToUserLocation(latitudeMeters: 1000, longitudeMeters: 1000)
     }
     @IBAction private func filterRegionsList(_ sender: UISegmentedControl) {
-        loadAllRegions()
+        filterRegions()
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -48,10 +41,15 @@ class RegionListController: UIViewController {
     //MARK: load and save regions data functions.
     private func loadAllRegions() {
         regionData.removeAll()
-        let allRegions = RegionData.allRegionsList()
+        let allRegions = RegionData.allRegions()
+        allRegions.forEach{ add(region: $0)}
+        self.mapView.zoomToUserLocation(latitudeMeters: 3000, longitudeMeters: 3000)
+    }
+    
+    private func filterRegions() {
+        let allRegions = RegionData.allRegions()
         let filteredByEntry = allRegions.filter{ $0.event == .onEntry }
         let filteredByExit = allRegions.filter{ $0.event == .onExit }
-        allRegions.forEach{ add(region: $0)}
         
         if filterRegionList.selectedSegmentIndex == 1 {
             filteredByExit.forEach{ remove(region: $0) }
@@ -60,7 +58,7 @@ class RegionListController: UIViewController {
         }
     }
     
-    private func saveAllRegions() {
+    func saveRegion() {
         let encoder = JSONEncoder()
         do {
             let data = try encoder.encode(regionData)
@@ -140,22 +138,7 @@ class RegionListController: UIViewController {
             locationManager.stopMonitoring(for: circularRegion)
         }
     }
-    
-}
 
-// MARK: - Location Manager Delegate
-extension RegionListController: CLLocationManagerDelegate {
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        mapView.showsUserLocation = status == .authorizedAlways
-    }
-    
-    func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        print("Monitoring failed for region with identifier: \(region!.identifier)")
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location Manager failed with the following error: \(error)")
-    }
 }
 
 //MARK: Add Regions Delegate
@@ -166,7 +149,7 @@ extension RegionListController: AddRegionsControllerDelegate {
         let region = RegionData(event: eventType, coordinate: coordinate, radius: clampedRadius, identifier: identifier, note: note)
         add(region: region)
         startMonitoring(regions: region)
-        saveAllRegions()
+        saveRegion()
     }
 }
 
@@ -206,7 +189,7 @@ extension RegionListController: MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         let region = view.annotation as! RegionData
         remove(region: region)
-        saveAllRegions()
+        saveRegion()
     }
     
 }

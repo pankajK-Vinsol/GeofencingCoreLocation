@@ -10,6 +10,10 @@ import UIKit
 import MapKit
 import CoreLocation
 
+struct PreferenceKeys {
+    static let savedRegions = "savedRegions"
+}
+
 class RegionData: NSObject, Codable, MKAnnotation {
     
     enum EventType: String {
@@ -67,10 +71,11 @@ class RegionData: NSObject, Codable, MKAnnotation {
         try container.encode(note, forKey: .note)
         try container.encode(event.rawValue, forKey: .event)
     }
+    
 }
 
 extension RegionData {
-    public class func allRegionsList() -> [RegionData] {
+    public class func allRegions() -> [RegionData] {
         guard let savedData = UserDefaults.standard.data(forKey: PreferenceKeys.savedRegions) else {
             return []
         }

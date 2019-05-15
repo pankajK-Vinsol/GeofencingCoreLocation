@@ -9,8 +9,25 @@
 import UIKit
 import CoreLocation
 
+private var lastLocation: CLLocation? {
+    didSet {
+        locationCallback?(lastLocation!)
+        locationCallback = nil
+    }
+}
+
+private var locationCallback: ((CLLocation) -> Void)?
+
+func getLastLocation(callback: @escaping (CLLocation) -> Void) {
+    guard let location = lastLocation else {
+        locationCallback = callback
+        return
+    }
+    locationCallback?(location)
+}
+
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate {
 
     var window: UIWindow?
     private let locationManager = CLLocationManager()
@@ -18,7 +35,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         locationManager.delegate = self
         locationManager.requestAlwaysAuthorization()
+        locationManager.startUpdatingLocation()
         return true
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        lastLocation = locations.last!
     }
     
     func applicationWillResignActive(_ application: UIApplication) {
@@ -43,13 +65,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
     
-    private func handleEvent(for region: CLRegion!) {
-        print("GeoFencing region triggered")
-    }
-
-}
-
-extension AppDelegate: CLLocationManagerDelegate {
+    //MARK: geofencing handler functions 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         if region is CLCircularRegion {
             handleEvent(for: region)
@@ -61,4 +77,21 @@ extension AppDelegate: CLLocationManagerDelegate {
             handleEvent(for: region)
         }
     }
+    
+    private func handleEvent(for region: CLRegion!) {
+        if UIApplication.shared.applicationState == .active {
+            guard let message = note(from: region.identifier) else { return }
+            window?.rootViewController?.showAlert(withTitle: nil, message: message)
+        }
+    }
+    
+    private func note(from identifier: String) -> String? {
+        let regions = RegionData.allRegions()
+        guard let matched = regions.first(where: { $0.identifier == identifier  }) else {
+            return nil
+        }
+        let alertMessage = "\(String(describing: matched.subtitle)) from \(String(describing: matched.title))"
+        return alertMessage
+    }
+
 }

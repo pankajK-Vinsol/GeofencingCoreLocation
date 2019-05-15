@@ -8,6 +8,7 @@
 
 import UIKit
 import MapKit
+import CoreLocation
 
 protocol AddRegionsControllerDelegate: AnyObject {
     func addRegionsController(controller: AddRegionsController, coordinate: CLLocationCoordinate2D, radius: Double, identifier: String, note: String, eventType: RegionData.EventType)
@@ -15,20 +16,20 @@ protocol AddRegionsControllerDelegate: AnyObject {
 
 class AddRegionsController: UIViewController {
 
-    @IBOutlet weak private var save: UIButton!
+    @IBOutlet weak private var saveButton: UIButton!
     @IBOutlet weak private var noteField: UITextField!
     @IBOutlet weak private var radiusField: UITextField!
-    @IBOutlet weak private var entryExitField: UISegmentedControl!
     @IBOutlet weak private var mapView: MKMapView!
+    @IBOutlet weak private var entryRadioImage: UIImageView!
+    @IBOutlet weak private var exitRadioImage: UIImageView!
     
     weak var delegate: AddRegionsControllerDelegate?
-    private let locationManager = CLLocationManager()
+    private var addEntryRegion = Bool()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        save.isEnabled = false
-        locationManager.delegate = self
-        locationManager.requestAlwaysAuthorization()
+        saveButton.isEnabled = false
+        mapView.zoomToUserLocation(latitudeMeters: 3000, longitudeMeters: 3000)
     }
     
     @IBAction private func close(_ sender: UIButton) {
@@ -36,7 +37,19 @@ class AddRegionsController: UIViewController {
     }
     
     @IBAction private func textFieldEditingChanged(sender: UITextField) {
-        save.isEnabled = !radiusField.text!.isEmpty && !noteField.text!.isEmpty
+        saveButton.isEnabled = !radiusField.text!.isEmpty && !noteField.text!.isEmpty
+    }
+    
+    @IBAction private func entryClick(_ sender: UIButton) {
+        entryRadioImage.image = #imageLiteral(resourceName: "checked")
+        exitRadioImage.image = #imageLiteral(resourceName: "unchecked")
+        addEntryRegion = true
+    }
+    
+    @IBAction private func exitClick(_ sender: UIButton) {
+        exitRadioImage.image = #imageLiteral(resourceName: "checked")
+        entryRadioImage.image = #imageLiteral(resourceName: "unchecked")
+        addEntryRegion = false
     }
     
     @IBAction private func saveClick(_ sender: UIButton) {
@@ -44,26 +57,11 @@ class AddRegionsController: UIViewController {
         let radius = Double(radiusField.text!) ?? 0
         let identifier = NSUUID().uuidString
         let note = noteField.text
-        let eventType: RegionData.EventType = (entryExitField.selectedSegmentIndex == 0) ? .onEntry : .onExit
+        let eventType: RegionData.EventType = (addEntryRegion == true) ? .onEntry : .onExit
         delegate?.addRegionsController( controller: self, coordinate: coordinate, radius: radius, identifier: identifier, note: note!, eventType: eventType)
     }
     
     @IBAction private func zoomClick(_ sender: UIButton) {
-        mapView.zoomToUserLocation()
-    }
-}
-
- //MARK: - Location Manager Delegate
-extension AddRegionsController: CLLocationManagerDelegate {
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        mapView.showsUserLocation = status == .authorizedAlways
-    }
-
-    func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        print("Monitoring failed for region with identifier: \(region!.identifier)")
-    }
-
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location Manager failed with the following error: \(error)")
+        mapView.zoomToUserLocation(latitudeMeters: 1000, longitudeMeters: 1000)
     }
 }
