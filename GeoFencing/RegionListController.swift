@@ -58,7 +58,6 @@ class RegionListController: UIViewController {
     }
     
     private func filterRegions() {
-        regionData.removeAll()
         let allRegions = RegionData.allRegions()
         let filteredByEntry = allRegions.filter{ $0.event == .onEntry }
         let filteredByExit = allRegions.filter{ $0.event == .onExit }
