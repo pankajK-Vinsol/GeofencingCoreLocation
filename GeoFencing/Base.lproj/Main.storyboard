@@ -124,6 +124,7 @@
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
                                             <action selector="textFieldEditingChangedWithSender:" destination="u4x-vg-XKu" eventType="editingChanged" id="sSF-2y-Flg"/>
+                                            <outlet property="delegate" destination="u4x-vg-XKu" id="Dqo-zV-qaI"/>
                                         </connections>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="line" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="OMk-QU-9j0">
@@ -136,6 +137,7 @@
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
                                             <action selector="textFieldEditingChangedWithSender:" destination="u4x-vg-XKu" eventType="editingChanged" id="3kn-vx-KJX"/>
+                                            <outlet property="delegate" destination="u4x-vg-XKu" id="bmq-gj-MLv"/>
                                         </connections>
                                     </textField>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qLS-H9-Mkc">

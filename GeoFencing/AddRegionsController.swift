@@ -65,3 +65,9 @@ class AddRegionsController: UIViewController {
         mapView.zoomToUserLocation(latitudeMeters: 100, longitudeMeters: 100)
     }
 }
+
+extension AddRegionsController: MKMapViewDelegate {
+    func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
+        mapView.zoomToUserLocation(latitudeMeters: 500, longitudeMeters: 500)
+    }
+}

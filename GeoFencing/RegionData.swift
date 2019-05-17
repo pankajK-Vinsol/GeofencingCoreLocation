@@ -85,4 +85,23 @@ extension RegionData {
         }
         return []
     }
+    
+    public class func saveRegions(regionData: [RegionData]) {
+        let encoder = JSONEncoder()
+        do {
+            let data = try encoder.encode(regionData)
+            UserDefaults.standard.set(data, forKey: PreferenceKeys.savedRegions)
+        }
+        catch {
+            print("Error in encoding regions data")
+        }
+    }
+    
+    static var filteredRegionExit: [RegionData] {
+       return RegionData.allRegions().filter{ $0.event == .onExit }
+    }
+    
+    static var filteredRegionEntry: [RegionData] {
+        return RegionData.allRegions().filter{ $0.event == .onEntry }
+    }
 }

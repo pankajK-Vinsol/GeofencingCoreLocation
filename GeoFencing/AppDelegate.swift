@@ -8,39 +8,15 @@
 
 import UIKit
 import CoreLocation
-
-private var lastLocation: CLLocation? {
-    didSet {
-        locationCallback?(lastLocation!)
-        locationCallback = nil
-    }
-}
-
-private var locationCallback: ((CLLocation) -> Void)?
-
-func getLastLocation(callback: @escaping (CLLocation) -> Void) {
-    guard let location = lastLocation else {
-        locationCallback = callback
-        return
-    }
-    locationCallback?(location)
-}
+import IQKeyboardManagerSwift
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate {
 
     var window: UIWindow?
-    private let locationManager = CLLocationManager()
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        locationManager.delegate = self
-        locationManager.requestAlwaysAuthorization()
-        locationManager.startUpdatingLocation()
+        IQKeyboardManager.shared.enable = true
         return true
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        lastLocation = locations.last!
     }
     
     func applicationWillResignActive(_ application: UIApplication) {

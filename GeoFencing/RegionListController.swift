@@ -15,21 +15,14 @@ class RegionListController: UIViewController {
     @IBOutlet weak private var filterRegionList: UISegmentedControl!
     @IBOutlet weak private var mapView: MKMapView!
     
-    private let locationManager = CLLocationManager()
+    private let locationInstance = LocationSingleton.sharedInstance.locationManager
     private var regionData: [RegionData] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         loadAllRegions()
     }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        guard mapView.annotations.count > 0 else {
-            return
-        }
-        updateViewWithRegions()
-    }
-    
+        
     func updateViewWithRegions() {
         mapView.layoutMargins = UIEdgeInsets(top: 25, left: 25, bottom: 25, right: 25)
         mapView.showAnnotations(mapView.annotations, animated: true)
@@ -58,25 +51,22 @@ class RegionListController: UIViewController {
     }
     
     private func filterRegions() {
-        let allRegions = RegionData.allRegions()
-        let filteredByEntry = allRegions.filter{ $0.event == .onEntry }
-        let filteredByExit = allRegions.filter{ $0.event == .onExit }
-        
         let annotations = mapView.annotations
         for annotation in annotations {
             mapView.view(for: annotation)?.isHidden = false
         }
-        for region in allRegions {
+        for region in RegionData.allRegions() {
+            removeRadiusOverlay(region: region)
             addRadiusOverlay(region: region)
         }
         
         switch filterRegionList.selectedSegmentIndex {
         case 1:
-            filteredByExit.forEach{
+            RegionData.filteredRegionExit.forEach{
                 hideAnnotations(region: $0)
             }
         case 2:
-            filteredByEntry.forEach{
+            RegionData.filteredRegionEntry.forEach{
                 hideAnnotations(region: $0)
             }
         default:
@@ -93,17 +83,6 @@ class RegionListController: UIViewController {
         }
         let overlayRemoved = mapView.overlays.filter{ $0.coordinate.longitude == longitude}
         mapView.removeOverlays(overlayRemoved)
-    }
-    
-    func saveRegion() {
-        let encoder = JSONEncoder()
-        do {
-            let data = try encoder.encode(regionData)
-            UserDefaults.standard.set(data, forKey: PreferenceKeys.savedRegions)
-        }
-        catch {
-            print("Error in encoding regions data")
-        }
     }
     
     // MARK: Functions that update the model/associated views with region changes
@@ -166,13 +145,13 @@ class RegionListController: UIViewController {
         }
         
         let fenceRegion = region(regions: regions)
-        locationManager.startMonitoring(for: fenceRegion)
+        locationInstance?.startMonitoring(for: fenceRegion)
     }
     
     private func stopMonitoring(regions: RegionData) {
-        for region in locationManager.monitoredRegions {
+        for region in locationInstance!.monitoredRegions {
             guard let circularRegion = region as? CLCircularRegion, circularRegion.identifier == regions.identifier else { continue }
-            locationManager.stopMonitoring(for: circularRegion)
+            locationInstance?.stopMonitoring(for: circularRegion)
         }
     }
 
@@ -182,19 +161,19 @@ class RegionListController: UIViewController {
 extension RegionListController: AddRegionsControllerDelegate {
     func addRegionsController(controller: AddRegionsController, coordinate: CLLocationCoordinate2D, radius: Double, identifier: String, note: String, eventType: RegionData.EventType) {
         controller.dismiss(animated: true, completion: nil)
-        let clampedRadius = min(radius, locationManager.maximumRegionMonitoringDistance)
+        let clampedRadius = min(radius, locationInstance!.maximumRegionMonitoringDistance)
         let region = RegionData(event: eventType, coordinate: coordinate, radius: clampedRadius, identifier: identifier, note: note)
         add(region: region)
         startMonitoring(regions: region)
-        saveRegion()
+        RegionData.saveRegions(regionData: regionData)
     }
 }
 
 // MARK: - MapView Delegate
 extension RegionListController: MKMapViewDelegate {
-    
     func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
         self.mapView.zoomToUserLocation(latitudeMeters: 100, longitudeMeters: 100)
+        updateViewWithRegions()
     }
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
@@ -230,7 +209,7 @@ extension RegionListController: MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         let region = view.annotation as! RegionData
         remove(region: region)
-        saveRegion()
+        RegionData.saveRegions(regionData: regionData)
     }
     
 }
